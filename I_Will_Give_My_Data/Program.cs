@@ -1,4 +1,6 @@
 ﻿using System.Net.Sockets;
+using System.Text.Json;
+using System.Text.Unicode;
 using Microsoft.Win32;
 
 
@@ -34,17 +36,36 @@ foreach (DriveInfo drive in DriveInfo.GetDrives())
 Console.WriteLine(driveInfo); // просто посмотреть для теста, потом эту строчку надо удалить 
 
 
-string data = $"Операционная система: {os}\nСвободное место на диске:\n{driveInfo}\n\nСписок программ:\n{displayName}"; // подготавливаем наши данные в переменную
+// Получение названия ПК
+string machineName = Environment.MachineName;
 
+//string data = $"Операционная система: {os}\nСвободное место на диске:\n{driveInfo}\n\nСписок программ:\n{displayName}"; // подготавливаем наши данные в переменную
+
+// Создаем словарь для отправки наших данных
+Dictionary<string, string> data = new Dictionary<string, string>()
+{
+    { "os", os },
+    { "driveInfo", driveInfo },
+    { "name", machineName }
+};
+
+// Здесь создаем настройки для сериализации данных
+var options = new JsonSerializerOptions
+{
+    Encoder = System.Text.Encodings.Web.JavaScriptEncoder.Create(UnicodeRanges.All),
+    WriteIndented = true
+};
 
 TcpClient client = new TcpClient("26.194.255.228", 3333); // подключаемся к серверу и создаём клиента 
 
 // Здесь данные должны отправляться на сервер 
 
 StreamWriter writer = new StreamWriter(client.GetStream());
-writer.WriteLine(data);
+writer.WriteLine(JsonSerializer.Serialize(data, options));
 writer.Flush();
 client.Close();
+
+
 
 
 
