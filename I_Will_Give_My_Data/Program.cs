@@ -2,6 +2,51 @@
 using System.Text.Json;
 using System.Text.Unicode;
 using Microsoft.Win32;
+using System.Net;
+using WUApiLib; // Эта штука как бы есть, но она не работает и UpdateSession, IUpdateSearcher и ISearchResult попросту не находит. Где брать WUApiLib я без понятия 
+
+//using Microsoft.UpdateServices.Administration;
+//using Microsoft.Update.Clients;
+
+
+// Код на получение информации о необходимости обновления Windows 
+
+/*
+
+static void IsWindowsUpdateNeeded2() // Версия 1 
+    {
+        UpdateSession updateSession = new UpdateSession();
+        IUpdateSearcher searcher = updateSession.CreateUpdateSearcher();
+        searcher.Online = true;
+        ISearchResult result = searcher.Search("isInstalled=0 and type='Software'");
+
+        if (result.Updates.Count() > 0)
+        {
+            foreach (IUpdate update in result.Updates)
+            {
+                Console.WriteLine($"{update.Identity.SecurityClassification}: {update.Identity.Title}");
+            }
+        }
+        else
+        {
+            Console.WriteLine("No updates found.");
+        }
+    }
+
+
+static bool IsWindowsUpdateNeeded() // Версия 2 
+{
+
+    UpdateSession updateSession = new UpdateSession();
+    IUpdateSearcher updateSearcher = updateSession.CreateUpdateSearcher();
+
+    ISearchResult searchResult = updateSearcher.Search("IsInstalled=0");
+
+    return searchResult.Updates.Count > 0;
+}
+
+*/
+
 
 
 // Код на получение программ
