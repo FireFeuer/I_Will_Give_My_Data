@@ -2,50 +2,32 @@
 using System.Text.Json;
 using System.Text.Unicode;
 using Microsoft.Win32;
-using System.Net;
-using WUApiLib; // Эта штука как бы есть, но она не работает и UpdateSession, IUpdateSearcher и ISearchResult попросту не находит. Где брать WUApiLib я без понятия 
-
-//using Microsoft.UpdateServices.Administration;
-//using Microsoft.Update.Clients;
+using WUApiLib;
 
 
 // Код на получение информации о необходимости обновления Windows 
 
-/*
-
-static void IsWindowsUpdateNeeded2() // Версия 1 
-    {
-        UpdateSession updateSession = new UpdateSession();
-        IUpdateSearcher searcher = updateSession.CreateUpdateSearcher();
-        searcher.Online = true;
-        ISearchResult result = searcher.Search("isInstalled=0 and type='Software'");
-
-        if (result.Updates.Count() > 0)
-        {
-            foreach (IUpdate update in result.Updates)
-            {
-                Console.WriteLine($"{update.Identity.SecurityClassification}: {update.Identity.Title}");
-            }
-        }
-        else
-        {
-            Console.WriteLine("No updates found.");
-        }
-    }
-
-
-static bool IsWindowsUpdateNeeded() // Версия 2 
+static bool IsWindowsUpdateNeeded() 
 {
-
     UpdateSession updateSession = new UpdateSession();
     IUpdateSearcher updateSearcher = updateSession.CreateUpdateSearcher();
-
     ISearchResult searchResult = updateSearcher.Search("IsInstalled=0");
 
     return searchResult.Updates.Count > 0;
 }
 
-*/
+string isWindowsUpdateNeeded = "";
+if(IsWindowsUpdateNeeded() == true)
+{
+    isWindowsUpdateNeeded = "Windows необходимо обновить";
+}
+else
+{
+    isWindowsUpdateNeeded = "Нет необходимости обновлять Windows";
+}
+
+Console.WriteLine(isWindowsUpdateNeeded); // просто посмотреть для теста, потом эту строчку надо удалить 
+
 
 
 
@@ -61,12 +43,12 @@ foreach (String keyName in key.GetSubKeyNames())
     displayName += subkey.GetValue("DisplayName") as string + "\n";
 }
 
-Console.WriteLine(displayName);// просто посмотреть для теста, потом эту строчку надо удалить 
+Console.WriteLine(displayName); // просто посмотреть для теста, потом эту строчку надо удалить 
 
 
 
 string os = Environment.OSVersion.ToString();
-Console.WriteLine(os.ToString());// просто посмотреть для теста, потом эту строчку надо удалить 
+Console.WriteLine(os.ToString()); // просто посмотреть для теста, потом эту строчку надо удалить 
 
 string driveInfo = string.Empty;
 foreach (DriveInfo drive in DriveInfo.GetDrives())
@@ -90,6 +72,7 @@ string machineName = Environment.MachineName;
 Dictionary<string, string> data = new Dictionary<string, string>()
 {
     { "os", os },
+    { "IsWindowsUpdateNeeded", isWindowsUpdateNeeded },
     { "driveInfo", driveInfo },
     { "name", machineName }
 };
