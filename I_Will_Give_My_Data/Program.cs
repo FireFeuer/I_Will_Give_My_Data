@@ -1,4 +1,5 @@
 ﻿using System.Net.Sockets;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Unicode;
 using Microsoft.Win32;
@@ -66,14 +67,16 @@ foreach (DriveInfo drive in DriveInfo.GetDrives())
 // Получение названия ПК
 string machineName = Environment.MachineName;
 
-//string data = $"Операционная система: {os}\nСвободное место на диске:\n{driveInfo}\n\nСписок программ:\n{displayName}"; // подготавливаем наши данные в переменную
+//string data = $"Операционная система: {os}\nСвободное место на диске:\n{driveInfo}\n\nСписок программ:\n{displayName}"; // подготавливаем наши данные в переменную (код-наследие)
 
 
 
 
 // код конфигурационного файла config.env
+string path = Assembly.GetEntryAssembly().Location;
+string pathToEnvFile = path.Substring(0, path.IndexOf("bin"));
+pathToEnvFile = pathToEnvFile + "config.env";
 
-var pathToEnvFile = System.IO.Directory.GetCurrentDirectory() + "\\config.env";
 
 string ip = "";
 int port = 0;
@@ -104,7 +107,8 @@ using (var streamReader = new StreamReader(pathToEnvFile))
     }
 }
 
-
+Console.WriteLine(ip);
+Console.WriteLine(port);
 
 
 
@@ -124,6 +128,7 @@ var options = new JsonSerializerOptions
     Encoder = System.Text.Encodings.Web.JavaScriptEncoder.Create(UnicodeRanges.All),
     WriteIndented = true
 };
+
 try
 {
     TcpClient client = new TcpClient(ip, port); // подключаемся к серверу и создаём клиента 

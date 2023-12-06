@@ -8,6 +8,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="config.env" />
+    <None Remove="wuapi.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="config.env">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
     <COMReference Include="WUApiLib">
       <WrapperTool>tlbimp</WrapperTool>
       <VersionMinor>0</VersionMinor>
