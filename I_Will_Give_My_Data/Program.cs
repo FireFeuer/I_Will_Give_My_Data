@@ -26,7 +26,7 @@ else
     isWindowsUpdateNeeded = "Нет необходимости обновлять Windows";
 }
 
-Console.WriteLine(isWindowsUpdateNeeded); // просто посмотреть для теста, потом эту строчку надо удалить 
+
 
 
 
@@ -43,12 +43,12 @@ foreach (String keyName in key.GetSubKeyNames())
     displayName += subkey.GetValue("DisplayName") as string + "\n";
 }
 
-Console.WriteLine(displayName); // просто посмотреть для теста, потом эту строчку надо удалить 
+
 
 
 
 string os = Environment.OSVersion.ToString();
-Console.WriteLine(os.ToString()); // просто посмотреть для теста, потом эту строчку надо удалить 
+
 
 string driveInfo = string.Empty;
 foreach (DriveInfo drive in DriveInfo.GetDrives())
@@ -60,13 +60,54 @@ foreach (DriveInfo drive in DriveInfo.GetDrives())
         driveInfo += $"Диск {drive.Name}: Свободное место - {AvailableFreeSpace_Gb} Gb\n";
     }
 }
-Console.WriteLine(driveInfo); // просто посмотреть для теста, потом эту строчку надо удалить 
+
 
 
 // Получение названия ПК
 string machineName = Environment.MachineName;
 
 //string data = $"Операционная система: {os}\nСвободное место на диске:\n{driveInfo}\n\nСписок программ:\n{displayName}"; // подготавливаем наши данные в переменную
+
+
+
+
+// код конфигурационного файла config.env
+
+var pathToEnvFile = System.IO.Directory.GetCurrentDirectory() + "\\config.env";
+
+string ip = "";
+int port = 0;
+
+using (var streamReader = new StreamReader(pathToEnvFile))
+{
+    string fileContents = streamReader.ReadToEnd();
+    string[] lines = fileContents.Split('\n');
+
+    foreach (string line in lines)
+    {
+        string[] keyValue = line.Split('=');
+        if (keyValue.Length == 2)
+        {
+            string key_env = keyValue[0].Trim();
+            string value = keyValue[1].Trim();
+
+            switch (key_env)
+            {
+                case "IP":
+                    ip = value;
+                    break;
+                case "PORT":
+                    port = int.Parse(value);
+                    break;
+            }
+        }
+    }
+}
+
+
+
+
+
 
 // Создаем словарь для отправки наших данных
 Dictionary<string, string> data = new Dictionary<string, string>()
@@ -83,15 +124,23 @@ var options = new JsonSerializerOptions
     Encoder = System.Text.Encodings.Web.JavaScriptEncoder.Create(UnicodeRanges.All),
     WriteIndented = true
 };
+try
+{
+    TcpClient client = new TcpClient(ip, port); // подключаемся к серверу и создаём клиента 
 
-TcpClient client = new TcpClient("26.194.255.228", 3333); // подключаемся к серверу и создаём клиента 
+    // Здесь данные должны отправляться на сервер 
 
-// Здесь данные должны отправляться на сервер 
+    StreamWriter writer = new StreamWriter(client.GetStream());
+    writer.WriteLine(JsonSerializer.Serialize(data, options));
+    writer.Flush();
+    client.Close();
+}
+catch
+{
+    Console.WriteLine("Программа не смогла подключиться к серверу");
+}
 
-StreamWriter writer = new StreamWriter(client.GetStream());
-writer.WriteLine(JsonSerializer.Serialize(data, options));
-writer.Flush();
-client.Close();
+
 
 
 
