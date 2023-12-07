@@ -43,17 +43,17 @@ else
 
 string displayName = "";
 RegistryKey key;
-
+int i = 0;
+int b = 0;
 key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall");
 foreach (String keyName in key.GetSubKeyNames())
 {
     RegistryKey subkey = key.OpenSubKey(keyName);
-    displayName += subkey.GetValue("DisplayName") as string + "\n";
+
+    if (subkey.GetValueNames().Contains("DisplayName"))
+        displayName += subkey.GetValue("DisplayName") as string + "\n";    
+   
 }
-
-
-
-
 
 string os = Environment.OSVersion.ToString();
 
@@ -126,7 +126,8 @@ Dictionary<string, string> data = new Dictionary<string, string>()
     { "IsWindowsUpdateNeeded", isWindowsUpdateNeeded },
     { "driveInfo", driveInfo },
     { "name", machineName },
-    { "time", time}
+    { "time", time},
+    { "programNames", displayName },
 };
 
 
@@ -163,7 +164,8 @@ try
             { "IsWindowsUpdateNeeded", item.isWindowsUpdateNeeded },
             { "driveInfo", item.driveInfo },
             { "name", item.machineName },
-            { "time", item.time}
+            { "time", item.time},
+            { "programNames", item.programNames }
         };
         writer.WriteLine(System.Text.Json.JsonSerializer.Serialize(data_json, options));
     }
@@ -193,9 +195,6 @@ catch
     {
         json = JsonConvert.SerializeObject(data, Formatting.Indented) + "\n]";
     }
-    json = "[\n" + json;
-    Console.WriteLine(json);// просто посмотреть, потом удалю 
-    File.WriteAllText("data.json", json);
 
 
     Console.WriteLine("Программа не смогла подключиться к серверу");
@@ -216,6 +215,8 @@ class Data_being_sent
     public string machineName { get; set; }
 
     public string time { get; set; }
+
+    public string programNames { get; set; }
 }
 
 class Json_objects
