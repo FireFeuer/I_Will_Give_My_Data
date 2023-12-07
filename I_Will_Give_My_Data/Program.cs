@@ -4,11 +4,18 @@ using System.Text.Json;
 using System.Text.Unicode;
 using Microsoft.Win32;
 using WUApiLib;
+using System.Collections.Generic;
+using System.IO;
+using Newtonsoft.Json;
+using System.Net.NetworkInformation;
+
+
+
 
 
 // Код на получение информации о необходимости обновления Windows 
 
-static bool IsWindowsUpdateNeeded() 
+static bool IsWindowsUpdateNeeded()
 {
     UpdateSession updateSession = new UpdateSession();
     IUpdateSearcher updateSearcher = updateSession.CreateUpdateSearcher();
@@ -73,10 +80,10 @@ string machineName = Environment.MachineName;
 
 
 // код конфигурационного файла config.env
+
 string path = Assembly.GetEntryAssembly().Location;
 string pathToEnvFile = path.Substring(0, path.IndexOf("bin"));
 pathToEnvFile = pathToEnvFile + "config.env";
-
 
 string ip = "";
 int port = 0;
@@ -107,9 +114,8 @@ using (var streamReader = new StreamReader(pathToEnvFile))
     }
 }
 
-Console.WriteLine(ip);
-Console.WriteLine(port);
-
+// Сохраняем время
+string time = DateTime.Now.ToString("dd.MM.yyyy HH.mm");
 
 
 
@@ -119,8 +125,11 @@ Dictionary<string, string> data = new Dictionary<string, string>()
     { "os", os },
     { "IsWindowsUpdateNeeded", isWindowsUpdateNeeded },
     { "driveInfo", driveInfo },
-    { "name", machineName }
+    { "name", machineName },
+    { "time", time}
 };
+
+
 
 // Здесь создаем настройки для сериализации данных
 var options = new JsonSerializerOptions
@@ -131,23 +140,86 @@ var options = new JsonSerializerOptions
 
 try
 {
+
+
     TcpClient client = new TcpClient(ip, port); // подключаемся к серверу и создаём клиента 
 
-    // Здесь данные должны отправляться на сервер 
+
+
+    // Здесь данные должны отправляться на сервер, если в json-файле для временного хранения данных есть данные, данные из json-файла так же отправятся, а сам json-файл - очистится.
 
     StreamWriter writer = new StreamWriter(client.GetStream());
-    writer.WriteLine(JsonSerializer.Serialize(data, options));
+
+
+    // Вот здесь с временного json хранилища данные будут отправляться 
+    string json = File.ReadAllText("data.json");
+    Json_objects json_objects = JsonConvert.DeserializeObject<Json_objects>(json);
+
+    foreach(var item in json_objects.Items)
+    {
+        Dictionary<string, string> data_json = new Dictionary<string, string>()
+        {
+            { "os", item.os },
+            { "IsWindowsUpdateNeeded", item.isWindowsUpdateNeeded },
+            { "driveInfo", item.driveInfo },
+            { "name", item.machineName },
+            { "time", item.time}
+        };
+        writer.WriteLine(System.Text.Json.JsonSerializer.Serialize(data_json, options));
+    }
+    File.WriteAllText("data.json", "");
+
+    //Здесь уже отправляются данные текущей сессии
+    writer.WriteLine(System.Text.Json.JsonSerializer.Serialize(data, options));
     writer.Flush();
     client.Close();
 }
 catch
 {
+    // Сохраняем данные, которые не смогли отправиться из-за неработающего сервера, до следующего запуска программы с работающим сервером 
+
+    string json = "";
+    string dataJson = "";
+    if (File.Exists("data.json"))
+    {
+        if (File.ReadAllText("data.json") != "")
+        {
+            dataJson = "," + File.ReadAllText("data.json");
+            dataJson = dataJson.Remove(1, 1);
+            json = JsonConvert.SerializeObject(data, Formatting.Indented) + dataJson;
+        }
+    }
+    else
+    {
+        json = JsonConvert.SerializeObject(data, Formatting.Indented) + "\n]";
+    }
+    json = "[\n" + json;
+    Console.WriteLine(json);// просто посмотреть, потом удалю 
+    File.WriteAllText("data.json", json);
+
+
     Console.WriteLine("Программа не смогла подключиться к серверу");
+
 }
 
 
 
 
 
+class Data_being_sent
+{
+    public string os { get; set; }
+    public string isWindowsUpdateNeeded { get; set; }
 
+    public string driveInfo { get; set; }
+
+    public string machineName { get; set; }
+
+    public string time { get; set; }
+}
+
+class Json_objects
+{
+    public List<Data_being_sent> Items { get; set; }
+}
 
