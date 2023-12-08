@@ -11,8 +11,6 @@ using System.Net.NetworkInformation;
 
 
 
-
-
 // Код на получение информации о необходимости обновления Windows 
 
 static bool IsWindowsUpdateNeeded()
@@ -141,8 +139,6 @@ var options = new JsonSerializerOptions
 
 try
 {
-
-
     TcpClient client = new TcpClient(ip, port); // подключаемся к серверу и создаём клиента 
 
 
@@ -152,27 +148,56 @@ try
     StreamWriter writer = new StreamWriter(client.GetStream());
 
 
-    // Вот здесь с временного json хранилища данные будут отправляться 
-    string json = File.ReadAllText("data.json");
-    Json_objects json_objects = JsonConvert.DeserializeObject<Json_objects>(json);
 
-    foreach(var item in json_objects.Items)
+    string json_from_jsonFile = "";
+    string dataJson = "";
+    if (File.Exists("data.json"))
     {
-        Dictionary<string, string> data_json = new Dictionary<string, string>()
+        if (File.ReadAllText("data.json") != "")
         {
-            { "os", item.os },
-            { "IsWindowsUpdateNeeded", item.isWindowsUpdateNeeded },
-            { "driveInfo", item.driveInfo },
-            { "name", item.machineName },
-            { "time", item.time},
-            { "programNames", item.programNames }
-        };
-        writer.WriteLine(System.Text.Json.JsonSerializer.Serialize(data_json, options));
+            dataJson = "," + File.ReadAllText("data.json");
+            dataJson = dataJson.Remove(1, 1);
+            json_from_jsonFile = "[\n" + JsonConvert.SerializeObject(data, Formatting.Indented) + dataJson;
+            File.WriteAllText("data.json", json_from_jsonFile);
+        }
     }
-    File.WriteAllText("data.json", "");
+    else
+    {
+        json_from_jsonFile = "[\n" + JsonConvert.SerializeObject(data, Formatting.Indented) + "\n]";
+        File.WriteAllText("data.json", json_from_jsonFile);
+    }
+
+
+
+
+
+    // Вот здесь с временного json хранилища данные будут отправляться 
+    if (File.Exists("data.json"))
+    {
+        if (File.ReadAllText("data.json") != "")
+        {
+            string json = File.ReadAllText("data.json");
+            List<Data_being_sent> json_objects = JsonConvert.DeserializeObject<List<Data_being_sent>>(json);
+
+            foreach (var item in json_objects)
+            {
+                Dictionary<string, string> data_json = new Dictionary<string, string>()
+                {
+                    { "os", item.os },
+                    { "IsWindowsUpdateNeeded", item.isWindowsUpdateNeeded },
+                    { "driveInfo", item.driveInfo },
+                    { "name", item.name },
+                    { "time", item.time},
+                    { "programNames", item.programNames }
+                };
+                writer.WriteLine(System.Text.Json.JsonSerializer.Serialize(data_json, options));
+            }
+            File.WriteAllText("data.json", "");
+        }
+    }
+
 
     //Здесь уже отправляются данные текущей сессии
-    writer.WriteLine(System.Text.Json.JsonSerializer.Serialize(data, options));
     writer.Flush();
     client.Close();
 }
@@ -188,19 +213,19 @@ catch
         {
             dataJson = "," + File.ReadAllText("data.json");
             dataJson = dataJson.Remove(1, 1);
-            json = JsonConvert.SerializeObject(data, Formatting.Indented) + dataJson;
+            json = "[\n" + JsonConvert.SerializeObject(data, Formatting.Indented) + dataJson;
+            File.WriteAllText("data.json", json);
         }
     }
     else
     {
-        json = JsonConvert.SerializeObject(data, Formatting.Indented) + "\n]";
+        json = "[\n" + JsonConvert.SerializeObject(data, Formatting.Indented) + "\n]";
+        File.WriteAllText("data.json", json);
     }
-
+    Console.WriteLine(json);
 
     Console.WriteLine("Программа не смогла подключиться к серверу");
-
 }
-
 
 
 
@@ -212,15 +237,12 @@ class Data_being_sent
 
     public string driveInfo { get; set; }
 
-    public string machineName { get; set; }
+    public string name { get; set; }
 
     public string time { get; set; }
 
     public string programNames { get; set; }
 }
 
-class Json_objects
-{
-    public List<Data_being_sent> Items { get; set; }
-}
+
 
