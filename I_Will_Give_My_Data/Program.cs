@@ -137,8 +137,7 @@ var options = new JsonSerializerOptions
     WriteIndented = true
 };
 
-try
-{
+try { 
     TcpClient client = new TcpClient(ip, port); // подключаемся к серверу и создаём клиента 
 
 
@@ -160,6 +159,11 @@ try
             json_from_jsonFile = "[\n" + JsonConvert.SerializeObject(data, Formatting.Indented) + dataJson;
             File.WriteAllText("data.json", json_from_jsonFile);
         }
+        else
+        {
+            dataJson = "[\n" + JsonConvert.SerializeObject(data, Formatting.Indented) + "\n]";
+            File.WriteAllText("data.json", dataJson);
+        }
     }
     else
     {
@@ -172,29 +176,29 @@ try
 
 
     // Вот здесь с временного json хранилища данные будут отправляться 
-    if (File.Exists("data.json"))
-    {
-        if (File.ReadAllText("data.json") != "")
-        {
-            string json = File.ReadAllText("data.json");
-            List<Data_being_sent> json_objects = JsonConvert.DeserializeObject<List<Data_being_sent>>(json);
 
+                string json = File.ReadAllText("data.json");
+                List<Data_being_sent> json_objects = JsonConvert.DeserializeObject<List<Data_being_sent>>(json);
+
+                Dictionary<string, string> data_json = null;
+            writer.WriteLine("[");  
             foreach (var item in json_objects)
             {
-                Dictionary<string, string> data_json = new Dictionary<string, string>()
-                {
-                    { "os", item.os },
-                    { "IsWindowsUpdateNeeded", item.isWindowsUpdateNeeded },
-                    { "driveInfo", item.driveInfo },
-                    { "name", item.name },
-                    { "time", item.time},
-                    { "programNames", item.programNames }
-                };
-                writer.WriteLine(System.Text.Json.JsonSerializer.Serialize(data_json, options));
+                    data_json = new Dictionary<string, string>()
+                            {
+                                { "os", item.os },
+                                { "IsWindowsUpdateNeeded", item.isWindowsUpdateNeeded },
+                                { "driveInfo", item.driveInfo },
+                                { "name", item.name },
+                                { "time", item.time},
+                                { "programNames", item.programNames }
+                            };
+                    writer.WriteLine(System.Text.Json.JsonSerializer.Serialize(data_json, options));
+                    writer.WriteLine(",");
             }
+            writer.WriteLine("]");
             File.WriteAllText("data.json", "");
-        }
-    }
+
 
 
     //Здесь уже отправляются данные текущей сессии
@@ -203,17 +207,22 @@ try
 }
 catch
 {
-    // Сохраняем данные, которые не смогли отправиться из-за неработающего сервера, до следующего запуска программы с работающим сервером 
+    // сохраняем данные, которые не смогли отправиться из-за неработающего сервера, до следующего запуска программы с работающим сервером 
 
     string json = "";
-    string dataJson = "";
+    string datajson = "";
     if (File.Exists("data.json"))
     {
         if (File.ReadAllText("data.json") != "")
         {
-            dataJson = "," + File.ReadAllText("data.json");
-            dataJson = dataJson.Remove(1, 1);
-            json = "[\n" + JsonConvert.SerializeObject(data, Formatting.Indented) + dataJson;
+            datajson = "," + File.ReadAllText("data.json");
+            datajson = datajson.Remove(1, 1);
+            json = "[\n" + JsonConvert.SerializeObject(data, Formatting.Indented) + datajson;
+            File.WriteAllText("data.json", json);
+        }
+        else
+        {
+            json = "[\n" + JsonConvert.SerializeObject(data, Formatting.Indented) + "\n]";
             File.WriteAllText("data.json", json);
         }
     }
@@ -222,9 +231,8 @@ catch
         json = "[\n" + JsonConvert.SerializeObject(data, Formatting.Indented) + "\n]";
         File.WriteAllText("data.json", json);
     }
-    Console.WriteLine(json);
 
-    Console.WriteLine("Программа не смогла подключиться к серверу");
+    Console.WriteLine("программа не смогла подключиться к серверу");
 }
 
 
@@ -242,6 +250,11 @@ class Data_being_sent
     public string time { get; set; }
 
     public string programNames { get; set; }
+}
+
+class JsonItems 
+{
+    public List<Data_being_sent> Items { get; set; }
 }
 
 
