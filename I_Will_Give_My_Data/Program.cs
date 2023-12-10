@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json;
 using System.Net.NetworkInformation;
+using System.Diagnostics;
 
 
 
@@ -75,6 +76,40 @@ string machineName = Environment.MachineName;
 //string data = $"Операционная система: {os}\nСвободное место на диске:\n{driveInfo}\n\nСписок программ:\n{displayName}"; // подготавливаем наши данные в переменную (код-наследие)
 
 
+// Получаем события связанные с системой.
+
+EventLog eventLogSystem = new EventLog("System");
+
+// Получаем события связанные с приложениями.
+
+EventLog eventLogApplication = new EventLog("Application");
+
+// Создаем переменные для хранения нужных нам событий
+
+string eventsSystem = "";
+
+string eventsApplication = "";
+
+
+foreach (EventLogEntry entry in eventLogSystem.Entries)
+{
+    // Поучаем только ошибки и критические ошибки
+    if (entry.EntryType == EventLogEntryType.Error || entry.EntryType == EventLogEntryType.FailureAudit)
+    {
+        eventsSystem += entry.EventID.ToString() + "\n" + entry.Source + "\n" + entry.TimeGenerated.ToString() + "\n" + entry.Message + "\n\n";
+    }
+}
+
+foreach (EventLogEntry entry in eventLogApplication.Entries)
+{
+    // Поучаем только ошибки и критические ошибки
+    if (entry.EntryType == EventLogEntryType.Error || entry.EntryType == EventLogEntryType.FailureAudit)
+    {
+        eventsApplication += entry.EventID.ToString() + "\n" + entry.Source + "\n" + entry.TimeGenerated.ToString() + "\n" + entry.Message + "\n\n";
+    }
+}
+
+
 
 
 // код конфигурационного файла config.env
@@ -126,6 +161,8 @@ Dictionary<string, string> data = new Dictionary<string, string>()
     { "name", machineName },
     { "time", time},
     { "programNames", displayName },
+    { "eventsSystem", eventsSystem },
+    { "eventsApplication", eventsApplication }
 };
 
 
@@ -191,7 +228,9 @@ try {
                                 { "driveInfo", item.driveInfo },
                                 { "name", item.name },
                                 { "time", item.time},
-                                { "programNames", item.programNames }
+                                { "programNames", item.programNames },
+                                { "eventsSystem", item.eventsSystem },
+                                { "eventsApplication", item.eventsApplication}
                             };
                     writer.WriteLine(System.Text.Json.JsonSerializer.Serialize(data_json, options));
                     writer.WriteLine(",");
@@ -250,6 +289,12 @@ class Data_being_sent
     public string time { get; set; }
 
     public string programNames { get; set; }
+
+    public string eventsSystem { get; set; }
+
+    public string eventsApplication { get; set; }
+
+
 }
 
 class JsonItems 
