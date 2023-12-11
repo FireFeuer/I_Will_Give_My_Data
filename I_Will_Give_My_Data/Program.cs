@@ -8,7 +8,7 @@ using System.Text.Unicode;
 using WUApiLib;
 
 
-class Pogrma
+class Program
 {
     public static async Task Main(string[] args)
     {
