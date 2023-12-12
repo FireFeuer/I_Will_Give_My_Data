@@ -107,9 +107,12 @@ class Program
 
         // код конфигурационного файла config.env
 
-        string path = Assembly.GetEntryAssembly().Location;
-        string pathToEnvFile = path.Substring(0, path.IndexOf("bin"));
-        pathToEnvFile = pathToEnvFile + "config.env";
+        string path = Directory.GetCurrentDirectory();
+        string pathToEnvFile = Path.Combine(path, "config.env");
+        if (!File.Exists(pathToEnvFile))
+        {
+            await File.WriteAllTextAsync(pathToEnvFile, $"IP=\r\nPORT=3333");
+        }
 
         string ip = "";
         int port = 0;
@@ -165,8 +168,7 @@ class Program
             WriteIndented = true
         };
 
-        try
-        {
+   
             TcpClient client = new TcpClient(ip, port); // подключаемся к серверу и создаём клиента 
                                                         // Здесь данные должны отправляться на сервер, если в json-файле для временного хранения данных есть данные, данные из json-файла так же отправятся, а сам json-файл - очистится.
             StreamWriter writer = new StreamWriter(client.GetStream());
@@ -224,35 +226,38 @@ class Program
             //Здесь уже отправляются данные текущей сессии
             writer.Flush();
             client.Close();
-        }
-        catch
-        {
-            // сохраняем данные, которые не смогли отправиться из-за неработающего сервера, до следующего запуска программы с работающим сервером 
+        
+        //catch
+        //{
+        //    // сохраняем данные, которые не смогли отправиться из-за неработающего сервера, до следующего запуска программы с работающим сервером 
 
-            string json = "";
-            string datajson = "";
-            if (File.Exists("data.json"))
-            {
-                if (await File.ReadAllTextAsync("data.json") != "")
-                {
-                    datajson = "," + await File.ReadAllTextAsync("data.json");
-                    datajson = datajson.Remove(1, 1);
-                    json = "[\n" + JsonConvert.SerializeObject(data, Formatting.Indented) + datajson;
-                    await File.WriteAllTextAsync("data.json", json);
-                }
-                else
-                {
-                    json = "[\n" + JsonConvert.SerializeObject(data, Formatting.Indented) + "\n]";
-                    await File.WriteAllTextAsync("data.json", json);
-                }
-            }
-            else
-            {
-                json = "[\n" + JsonConvert.SerializeObject(data, Formatting.Indented) + "\n]";
-                await File.WriteAllTextAsync("data.json", json);
-            }
-            Console.WriteLine("программа не смогла подключиться к серверу");
-        }
+  
+            
+        //    string json = "";
+        //    string datajson = "";
+        //    if (File.Exists("data.json"))
+        //    {
+        //        if (await File.ReadAllTextAsync("data.json") != "")
+        //        {
+        //            datajson = "," + await File.ReadAllTextAsync("data.json");
+        //            datajson = datajson.Remove(1, 1);
+        //            json = "[\n" + JsonConvert.SerializeObject(data, Formatting.Indented) + datajson;
+        //            await File.WriteAllTextAsync("data.json", json);
+        //        }
+        //        else
+        //        {
+        //            json = "[\n" + JsonConvert.SerializeObject(data, Formatting.Indented) + "\n]";
+        //            await File.WriteAllTextAsync("data.json", json);
+        //        }
+        //    }
+        //    else
+        //    {
+        //        json = "[\n" + JsonConvert.SerializeObject(data, Formatting.Indented) + "\n]";
+        //        await File.WriteAllTextAsync("data.json", json);
+        //    }
+        //    Console.WriteLine("программа не смогла подключиться к серверу");
+
+        //}
 
     }
 }
