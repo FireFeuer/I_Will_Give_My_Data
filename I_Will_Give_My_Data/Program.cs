@@ -147,7 +147,9 @@ class Program
     private static async Task<string> GetEventLog(string logType)
     {
         EventLog eventLog = new EventLog(logType);
+
         // Создаем переменные для хранения нужных нам событий
+
         string events = "";
 
         foreach (EventLogEntry entry in eventLog.Entries)
