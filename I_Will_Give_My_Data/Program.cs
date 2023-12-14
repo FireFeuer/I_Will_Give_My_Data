@@ -153,7 +153,7 @@ class Program
         foreach (EventLogEntry entry in eventLog.Entries)
         {
             // Поучаем только ошибки и критические ошибки
-            if (entry.EntryType == EventLogEntryType.Error || entry.EntryType == EventLogEntryType.FailureAudit)
+            if ((entry.EntryType == EventLogEntryType.Error || entry.EntryType == EventLogEntryType.FailureAudit) && entry.TimeGenerated > DateTime.Today)
             {
                 events += entry.EventID.ToString() + "\n" + entry.Source + "\n" + entry.TimeGenerated.ToString() + "\n" + entry.Message + "\n\n";
             }
