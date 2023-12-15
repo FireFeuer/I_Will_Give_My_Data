@@ -89,8 +89,16 @@ class Program
 
         try
         {
-            TcpClient client = new TcpClient(ip, port); // подключаемся к серверу и создаём клиента 
-                                                        // Здесь данные должны отправляться на сервер, если в json-файле для временного хранения данных есть данные, данные из json-файла так же отправятся, а сам json-файл - очистится.
+            TcpClient client = null;
+            try
+            {
+                client = new TcpClient(ip, port); // подключаемся к серверу и создаём клиента 
+            }
+            catch
+            {
+                client = new TcpClient(ip, port); // подключаемся к серверу и создаём клиента 
+            }
+            // Здесь данные должны отправляться на сервер, если в json-файле для временного хранения данных есть данные, данные из json-файла так же отправятся, а сам json-файл - очистится.
             StreamWriter writer = new StreamWriter(client.GetStream());
             await CreateDataJsonFile(data);
             // Вот здесь с временного json хранилища данные будут отправляться 
