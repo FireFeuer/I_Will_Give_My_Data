@@ -5,7 +5,9 @@ using System.Net.Sockets;
 using System.Text.Json;
 using System.Text.Unicode;
 using WUApiLib;
-
+using System.Management;
+using OpenHardwareMonitor;
+using OpenHardwareMonitor.Hardware;
 
 class Program
 {
@@ -23,8 +25,9 @@ class Program
             isWindowsUpdateNeeded = "Нет необходимости обновлять Windows";
         }
 
-
-
+        // Код на получение температуры проца (норм библиотек для новых процов нет, и часто для многих новых процов (5 и менее лет) он будет показывать 0 градусов, тут уже ничего не поделаешь
+        float cpuTemperature = await GetCPUTemperature();
+        string cpuTemp = cpuTemperature.ToString();
         // Код на получение программ
         string applicationsList = await GetApplicationsList();
         string drivers = await GetDriversList();
@@ -71,6 +74,7 @@ class Program
         {
             { "os", os },
             { "IsWindowsUpdateNeeded", isWindowsUpdateNeeded },
+            { "CPUTemp", cpuTemp },
             { "driveInfo", drivers },
             { "name", machineName },
             { "time", time},
@@ -257,6 +261,7 @@ class Program
                     {
                         { "os", item.os },
                         { "IsWindowsUpdateNeeded", item.isWindowsUpdateNeeded },
+                        { "CPUTemp", item.CPUTemp},
                         { "driveInfo", item.driveInfo },
                         { "name", item.name },
                         { "time", item.time},
@@ -273,12 +278,39 @@ class Program
         writer.Flush();
         client.Close();
     }
+
+    private async static Task<float> GetCPUTemperature()
+    {
+        Computer computer = new Computer();
+        computer.CPUEnabled = true;
+
+
+        foreach (var hardware in computer.Hardware)
+        {
+            if (hardware.HardwareType == HardwareType.CPU)
+            {
+                hardware.Update();
+                foreach (var sensor in hardware.Sensors)
+                {
+                    if (sensor.SensorType == SensorType.Temperature)
+                    {
+                        return sensor.Value.GetValueOrDefault();
+                    }
+                }
+            }
+        }
+
+        return 0; // Если значение температуры не найдено или возникла ошибка.
+    }
 }
+
+
 
 class Data_being_sent
 {
     public string os { get; set; }
     public string isWindowsUpdateNeeded { get; set; }
+    public string CPUTemp { get; set;  }
     public string driveInfo { get; set; }
     public string name { get; set; }
     public string time { get; set; }
