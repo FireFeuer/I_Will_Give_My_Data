@@ -6,8 +6,8 @@ using System.Text.Json;
 using System.Text.Unicode;
 using WUApiLib;
 using System.Management;
-using OpenHardwareMonitor;
-using OpenHardwareMonitor.Hardware;
+using LibreHardwareMonitor.Hardware;
+
 
 class Program
 {
@@ -26,8 +26,8 @@ class Program
         }
 
         // Код на получение температуры проца (норм библиотек для новых процов нет, и часто для многих новых процов (5 и менее лет) он будет показывать 0 градусов, тут уже ничего не поделаешь
-        float cpuTemperature = await GetCPUTemperature();
-        string cpuTemp = cpuTemperature.ToString();
+        string cpuTemp = await GetCPUTemperature();
+        Console.WriteLine(cpuTemp);
         // Код на получение программ
         string applicationsList = await GetApplicationsList();
         string drivers = await GetDriversList();
@@ -74,7 +74,7 @@ class Program
         {
             { "os", os },
             { "IsWindowsUpdateNeeded", isWindowsUpdateNeeded },
-            { "CPUTemp", cpuTemp },
+            { "CPUTemp", cpuTemp + "(Температура процессора)" },
             { "driveInfo", drivers },
             { "name", machineName },
             { "time", time},
@@ -279,32 +279,50 @@ class Program
         client.Close();
     }
 
-    private async static Task<float> GetCPUTemperature()
+    private static async Task<string> GetCPUTemperature()
     {
+        UpdateVisitor updateVisitor = new UpdateVisitor();
         Computer computer = new Computer();
-        computer.CPUEnabled = true;
-
-
-        foreach (var hardware in computer.Hardware)
+        computer.Open();
+        computer.IsCpuEnabled = true;
+        computer.Accept(updateVisitor);
+        string cpuTemp = " ...ТЕМПЕРАТУРА ПРОЦЕССОРА НЕ НАЙДЕНА... ";
+        for (int i = 0; i < computer.Hardware.Count; i++)
         {
-            if (hardware.HardwareType == HardwareType.CPU)
+            if (computer.Hardware[i].HardwareType == HardwareType.Cpu)
             {
-                hardware.Update();
-                foreach (var sensor in hardware.Sensors)
+                for (int j = 0; j < computer.Hardware[i].Sensors.Length; j++)
                 {
-                    if (sensor.SensorType == SensorType.Temperature)
+                    if (computer.Hardware[i].Sensors[j].SensorType == SensorType.Temperature)
                     {
-                        return sensor.Value.GetValueOrDefault();
+                        cpuTemp = (computer.Hardware[i].Sensors[j].Name + ":" + computer.Hardware[i].Sensors[j].Value.ToString() + "\r");                    
                     }
+
                 }
             }
         }
-
-        return 0; // Если значение температуры не найдено или возникла ошибка.
+        computer.Close();
+        return cpuTemp;
     }
 }
 
 
+public class UpdateVisitor : IVisitor
+{
+    public void VisitComputer(IComputer computer)
+    {
+        computer.Traverse(this);
+    }
+
+    public void VisitHardware(IHardware hardware)
+    {
+        hardware.Update();
+        foreach (IHardware subHardware in hardware.SubHardware) subHardware.Accept(this);
+    }
+
+    public void VisitSensor(ISensor sensor) { }
+    public void VisitParameter(IParameter parameter) { }
+}
 
 class Data_being_sent
 {
