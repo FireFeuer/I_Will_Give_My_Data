@@ -7,7 +7,8 @@ using System.Text.Unicode;
 using WUApiLib;
 using System.Management;
 using LibreHardwareMonitor.Hardware;
-
+using I_Will_Give_My_Data.Classes;
+using System.IO;
 
 class Program
 {
@@ -34,6 +35,9 @@ class Program
         string os = Environment.OSVersion.ToString();
         // Получение названия ПК
         string machineName = Environment.MachineName;
+
+        string drivesInfo = await GetDriveSMART();
+        Console.WriteLine(drivesInfo);
 
         // Получаем события связанные с системой.
         string eventsSystem = await GetEventLog("System");
@@ -68,16 +72,18 @@ class Program
         // Сохраняем время
         string time = DateTime.Now.ToString("dd.MM.yyyy HH.mm");
 
+        
 
         // Создаем словарь для отправки наших данных
         Dictionary<string, string> data = new Dictionary<string, string>
         {
             { "os", os },
             { "IsWindowsUpdateNeeded", isWindowsUpdateNeeded },
-            { "CPUTemp", cpuTemp + "(Температура процессора)" },
+            { "CPUTemp", cpuTemp },
             { "driveInfo", drivers },
             { "name", machineName },
             { "time", time},
+            { "driveSMART", drivesInfo},
             { "programNames", applicationsList },
             { "eventsSystem", eventsSystem },
             { "eventsApplication", eventsApplication }
@@ -122,6 +128,34 @@ class Program
         ISearchResult searchResult = updateSearcher.Search("IsInstalled=0");
 
         return searchResult.Updates.Count > 0;
+    }
+
+    private static async Task<string> GetDriveSMART()
+    {
+        // Получаем информацию о жестких дисках
+
+        DriveInformation driveInformation = new DriveInformation();
+
+        Dictionary<int, Drive> drives = driveInformation.GetDictDrive();
+
+        string drivesInfo = "";
+
+        foreach (Drive drive in drives.Values)
+        {
+            drivesInfo += "Модель - " + drive.Model + "\n";
+            drivesInfo += "Тип - " + drive.Type + "\n";
+            drivesInfo += "Серийный номер - " + drive.Serial + "\n";
+
+            drivesInfo += "ID                   Current  Worst  Threshold  Data  Status \n";
+            foreach (var attr in drive.Attributes)
+            {
+                if (attr.Value.HasData)
+                    drivesInfo += $"{attr.Value.Attribute}\t {attr.Value.Current}\t {attr.Value.Worst}\t {attr.Value.Threshold}\t " + attr.Value.Data + " " + ((attr.Value.IsOK) ? "OK" : "") + "\n";
+            }
+            drivesInfo += "\n";
+        }
+
+        return drivesInfo;
     }
 
     private static async Task<string> GetApplicationsList()
@@ -265,6 +299,7 @@ class Program
                         { "driveInfo", item.driveInfo },
                         { "name", item.name },
                         { "time", item.time},
+                        { "driveSMART", item.driveSMART},
                         { "programNames", item.programNames },
                         { "eventsSystem", item.eventsSystem },
                         { "eventsApplication", item.eventsApplication}
@@ -332,6 +367,7 @@ class Data_being_sent
     public string driveInfo { get; set; }
     public string name { get; set; }
     public string time { get; set; }
+    public string driveSMART { get; set; }
     public string programNames { get; set; }
     public string eventsSystem { get; set; }
     public string eventsApplication { get; set; }
